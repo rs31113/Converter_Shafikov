@@ -1,12 +1,19 @@
 from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputFile
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputFile
 from PIL import Image
 from docx import Document
 from fpdf import FPDF
 import os
+from pytube import YouTube
 import pandas as pd
 from moviepy.editor import VideoFileClip
 from config import TOKEN
+
+
+def download(link):
+    video = YouTube(link)
+    video = video.streams.get_highest_resolution()
+    video.download('storage', 'test.mp4')
 
 
 bot = Bot(token=TOKEN)
@@ -170,11 +177,17 @@ async def controller(message: types):
             await message.document.download(f"storage/test.{extension}")
     except AttributeError:
         if message.content_type == "text":
-            extension = "txt"
-            kb = txt_kb
-            file = open('storage/test.txt', 'w+')
-            file.write(message.text)
-            file.close()
+            try:
+                download(message.text)
+                await message.answer_document(InputFile('storage/test.mp4'))
+                extension = "YOUTUBE VIDEO"
+                kb = vid_kb
+            except:
+                extension = "txt"
+                kb = txt_kb
+                file = open('storage/test.txt', 'w+')
+                file.write(message.text)
+                file.close()
         elif message.content_type == "photo":
             extension = "jpg"
             kb = im_kb
