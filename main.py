@@ -8,12 +8,30 @@ from pytube import YouTube
 import pandas as pd
 from moviepy.editor import VideoFileClip
 from config import TOKEN
+from pdf2docx import parse
+from typing import Tuple
+
+
+def convert_pdf2docx(input_file: str, output_file: str, pages: Tuple = None):
+    if pages:
+        pages = [int(i) for i in list(pages) if i.isnumeric()]
+    result = parse(pdf_file=input_file,
+                   docx_with_path=output_file, pages=pages)
+    return result
 
 
 def download(link):
     video = YouTube(link)
     video = video.streams.get_highest_resolution()
     video.download('storage', 'test.mp4')
+
+
+async def reply_to_user(extension, kb, message, valid=True):
+    if valid:
+        await message.answer(f"Тип файла - {extension.upper()}.\n"
+                             f"Выберите тип для конвертации:", reply_markup=kb)
+    else:
+        await message.answer("Извините, данный тип файла не поддерживается.")
 
 
 bot = Bot(token=TOKEN)
@@ -73,9 +91,12 @@ async def convert_png(callback_query: types.CallbackQuery):
     os.remove('storage/test.png')
 
 
-@dp.callback_query_handler(text=['pdf png file', 'pdf jpg file', 'pdf docx file'])
+@dp.callback_query_handler(text=['pdf docx file'])
 async def convert_pdf(callback_query: types.CallbackQuery):
-    pass
+    convert_pdf2docx('storage/test.pdf', 'storage/test.docx')
+    await callback_query.message.answer_document(InputFile('storage/test.docx'))
+    os.remove('storage/test.pdf')
+    os.remove('storage/test.docx')
 
 
 @dp.callback_query_handler(text=['xlsx csv file'])
@@ -143,64 +164,67 @@ async def send_welcome(message: types.Message):
                          "предложу варианты для конвертации.")
 
 
-@dp.message_handler(content_types=['any'])
-async def controller(message: types):
-    valid = True
+@dp.message_handler(content_types=['photo'])
+async def photo_processing(message: types):
+    extension = "jpg"
+    kb = im_kb
+    await message.photo[-1].download('storage/test.jpg')
+    await reply_to_user(extension, kb, message)
+
+
+@dp.message_handler(content_types=['text'])
+async def text_processing(message: types):
     try:
-        extension = message.document.file_name.split(".")[1].lower()
-        kb = InlineKeyboardMarkup(row_width=2)
-        if extension == "xlsx":
-            doc_btn_1 = InlineKeyboardButton('CSV', callback_data='xlsx csv file')
-            kb.add(doc_btn_1)
-        elif extension == "docx":
-            doc_btn_1 = InlineKeyboardButton('PDF', callback_data='docx pdf file')
-            doc_btn_2 = InlineKeyboardButton('TXT', callback_data='docx txt file')
-            doc_btn_3 = InlineKeyboardButton('text message', callback_data='docx text file')
-            kb.add(doc_btn_1, doc_btn_2, doc_btn_3)
-        elif extension == "txt":
-            kb.add(InlineKeyboardButton('text message', callback_data='txt text file'))
-        elif extension == "pdf":
-            doc_btn_1 = InlineKeyboardButton('PNG', callback_data='pdf png file')
-            doc_btn_2 = InlineKeyboardButton('DOCX', callback_data='pdf docx file')
-            doc_btn_3 = InlineKeyboardButton('JPG', callback_data='pdf jpg file')
-            kb.add(doc_btn_1, doc_btn_2, doc_btn_3)
-        elif extension == "png":
-            doc_btn_1 = InlineKeyboardButton('JPEG', callback_data='png jpeg file')
-            doc_btn_2 = InlineKeyboardButton('PDF', callback_data='png pdf file')
-            doc_btn_3 = InlineKeyboardButton('JPG', callback_data='png jpg file')
-            kb.add(doc_btn_1, doc_btn_2, doc_btn_3)
-        elif extension == "jpg":
-            kb = im_kb
-        else:
-            valid = False
-        if valid:
-            await message.document.download(f"storage/test.{extension}")
-    except AttributeError:
-        if message.content_type == "text":
-            try:
-                download(message.text)
-                await message.answer_document(InputFile('storage/test.mp4'))
-                extension = "YOUTUBE VIDEO"
-                kb = vid_kb
-            except:
-                extension = "txt"
-                kb = txt_kb
-                file = open('storage/test.txt', 'w+')
-                file.write(message.text)
-                file.close()
-        elif message.content_type == "photo":
-            extension = "jpg"
-            kb = im_kb
-            await message.photo[-1].download('storage/test.jpg')
-        else:
-            extension = "mp4"
-            kb = vid_kb
-            await message.video.download('storage/test.mp4')
-    if valid:
-        await message.answer(f"Тип файла - {extension.upper()}.\n"
-                             f"Выберите тип для конвертации:", reply_markup=kb)
+        download(message.text)
+        await message.answer_document(InputFile('storage/test.mp4'))
+        os.remove('storage/test.mp4')
+    except:
+        extension = "txt"
+        kb = txt_kb
+        file = open('storage/test.txt', 'w+')
+        file.write(message.text)
+        file.close()
+        await reply_to_user(extension, kb, message)
+
+
+@dp.message_handler(content_types=['video'])
+async def video_processing(message: types):
+    extension = "mp4"
+    kb = vid_kb
+    await message.video.download('storage/test.mp4')
+    await reply_to_user(extension, kb, message)
+
+
+@dp.message_handler(content_types=['document'])
+async def file_processing(message: types):
+    valid = True
+    extension = message.document.file_name.split(".")[1].lower()
+    kb = InlineKeyboardMarkup(row_width=2)
+    if extension == "xlsx":
+        doc_btn_1 = InlineKeyboardButton('CSV', callback_data='xlsx csv file')
+        kb.add(doc_btn_1)
+    elif extension == "docx":
+        doc_btn_1 = InlineKeyboardButton('PDF', callback_data='docx pdf file')
+        doc_btn_2 = InlineKeyboardButton('TXT', callback_data='docx txt file')
+        doc_btn_3 = InlineKeyboardButton('text message', callback_data='docx text file')
+        kb.add(doc_btn_1, doc_btn_2, doc_btn_3)
+    elif extension == "txt":
+        kb.add(InlineKeyboardButton('text message', callback_data='txt text file'))
+    elif extension == "pdf":
+        doc_btn_1 = InlineKeyboardButton('DOCX', callback_data='pdf docx file')
+        kb.add(doc_btn_1)
+    elif extension == "png":
+        doc_btn_1 = InlineKeyboardButton('JPEG', callback_data='png jpeg file')
+        doc_btn_2 = InlineKeyboardButton('PDF', callback_data='png pdf file')
+        doc_btn_3 = InlineKeyboardButton('JPG', callback_data='png jpg file')
+        kb.add(doc_btn_1, doc_btn_2, doc_btn_3)
+    elif extension == "jpg":
+        kb = im_kb
     else:
-        await message.answer("Извините, данный тип файла не поддерживается.")
+        valid = False
+    if valid:
+        await message.document.download(f"storage/test.{extension}")
+    await reply_to_user(extension, kb, message, valid)
 
 
 if __name__ == "__main__":
