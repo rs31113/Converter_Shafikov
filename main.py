@@ -1,5 +1,6 @@
 from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputFile
+from aiogram.types import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton, InputFile
+from aiogram.utils.markdown import hlink
 from PIL import Image
 from docx import Document
 from fpdf import FPDF
@@ -20,8 +21,8 @@ def convert_pdf2docx(input_file: str, output_file: str, pages: Tuple = None):
     return result
 
 
-def download(link):
-    video = YouTube(link)
+def download(youtube_link):
+    video = YouTube(youtube_link)
     video = video.streams.get_highest_resolution()
     video.download('storage', 'test.mp4')
 
@@ -36,6 +37,8 @@ async def reply_to_user(extension, kb, message, valid=True):
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
+bot_link = hlink('@shafikov_bot', 'https://t.me/shafikov_bot')
+mode = ParseMode.HTML
 
 
 im_btn_1 = InlineKeyboardButton('PDF', callback_data='pdf photo')
@@ -63,6 +66,7 @@ async def convert_docx(callback_query: types.CallbackQuery):
         await callback_query.message.answer(text)
     else:
         convert_to = callback_query.data.split()[1]
+        path = f'storage/test.{convert_to}'
         if convert_to == 'text' or convert_to == 'txt':
             doc = Document(f"storage/test.docx")
             result = [p.text for p in doc.paragraphs]
@@ -70,11 +74,11 @@ async def convert_docx(callback_query: types.CallbackQuery):
             if convert_to == 'text':
                 await callback_query.message.answer(result)
             else:
-                with open("storage/test.txt", "w") as f:
+                with open(path, "w") as f:
                     f.write(result)
                 f.close()
-                await callback_query.message.answer_document(InputFile('storage/test.txt'))
-                os.remove("storage/test.txt")
+                await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+                os.remove(path)
             os.remove("storage/test.docx")
 
 
@@ -86,60 +90,64 @@ async def convert_png(callback_query: types.CallbackQuery):
     image_1 = Image.open('storage/test.png')
     im_1 = image_1.convert('RGB')
     im_1.save(path)
-    await callback_query.message.answer_document(InputFile(path))
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     os.remove(path)
     os.remove('storage/test.png')
 
 
 @dp.callback_query_handler(text=['pdf docx file'])
 async def convert_pdf(callback_query: types.CallbackQuery):
-    convert_pdf2docx('storage/test.pdf', 'storage/test.docx')
-    await callback_query.message.answer_document(InputFile('storage/test.docx'))
+    path = 'storage/test.docx'
+    convert_pdf2docx('storage/test.pdf', path)
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     os.remove('storage/test.pdf')
-    os.remove('storage/test.docx')
+    os.remove(path)
 
 
 @dp.callback_query_handler(text=['xlsx csv file'])
 async def convert_xlsx(callback_query: types.CallbackQuery):
+    path = 'storage/test.csv'
     read_file = pd.read_excel("storage/test.xlsx")
-    read_file.to_csv("storage/test.csv")
-    await callback_query.message.answer_document(InputFile("storage/test.csv"))
+    read_file.to_csv(path)
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     os.remove("storage/test.xlsx")
-    os.remove("storage/test.csv")
+    os.remove(path)
 
 
 @dp.callback_query_handler(text='mp3 audio')
 async def convert_video(callback_query: types.CallbackQuery):
     video = VideoFileClip('storage/test.mp4')
     audio = video.audio
-    audio.write_audiofile('storage/test.mp3')
+    path = 'storage/test.mp3'
+    audio.write_audiofile(path)
     audio.close()
     video.close()
-    await callback_query.message.answer_document(InputFile("storage/test.mp3"))
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     os.remove('storage/test.mp4')
-    os.remove('storage/test.mp3')
+    os.remove(path)
 
 
 @dp.callback_query_handler(text=['pdf text', 'docx text'])
 async def convert_text(callback_query: types.CallbackQuery):
     message_format = callback_query.data.split()[0]
+    path = f'storage/test.{message_format}'
     if message_format == "pdf":
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", size=15)
         for line in open("storage/test.txt", "r+", encoding='utf-8'):
             pdf.cell(200, 10, txt=line, ln=1, align='L')
-        pdf.output("storage/test.pdf")
-        await callback_query.message.answer_document(InputFile("storage/test.pdf"))
-        os.remove('storage/test.pdf')
+        pdf.output(path)
+        await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+        os.remove(path)
     elif message_format == "docx":
         document = Document()
         with open('storage/test.txt') as f:
             for line in f:
                 document.add_paragraph(line)
-        document.save('storage/test.docx')
-        await callback_query.message.answer_document(InputFile("storage/test.docx"))
-        os.remove('storage/test.docx')
+        document.save(path)
+        await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+        os.remove(path)
     os.remove('storage/test.txt')
 
 
@@ -151,7 +159,7 @@ async def convert_photo(callback_query: types.CallbackQuery):
     image_1 = Image.open('storage/test.jpg')
     im_1 = image_1.convert('RGB')
     im_1.save(path)
-    await callback_query.message.answer_document(InputFile(path))
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     os.remove(path)
     os.remove('storage/test.jpg')
 
