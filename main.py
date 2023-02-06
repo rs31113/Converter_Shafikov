@@ -11,13 +11,18 @@ from moviepy.editor import VideoFileClip
 from config import TOKEN
 from pdf2docx import parse
 from typing import Tuple
+from docx2pdf import convert
+
+
+def clear_storage():
+    for file in os.listdir("storage"):
+        os.remove(f'storage/{file}')
 
 
 def convert_pdf2docx(input_file: str, output_file: str, pages: Tuple = None):
     if pages:
         pages = [int(i) for i in list(pages) if i.isnumeric()]
-    result = parse(pdf_file=input_file,
-                   docx_with_path=output_file, pages=pages)
+    result = parse(pdf_file=input_file, docx_with_path=output_file, pages=pages)
     return result
 
 
@@ -78,8 +83,9 @@ async def convert_docx(callback_query: types.CallbackQuery):
                     f.write(result)
                 f.close()
                 await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
-                os.remove(path)
-            os.remove("storage/test.docx")
+        else:
+            convert('storage/test.docx', 'storage/test.pdf')
+    clear_storage()
 
 
 @dp.callback_query_handler(text=['png jpeg file', 'png jpg file', 'png pdf file'])
@@ -91,8 +97,7 @@ async def convert_png(callback_query: types.CallbackQuery):
     im_1 = image_1.convert('RGB')
     im_1.save(path)
     await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
-    os.remove(path)
-    os.remove('storage/test.png')
+    clear_storage()
 
 
 @dp.callback_query_handler(text=['pdf docx file'])
@@ -100,8 +105,7 @@ async def convert_pdf(callback_query: types.CallbackQuery):
     path = 'storage/test.docx'
     convert_pdf2docx('storage/test.pdf', path)
     await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
-    os.remove('storage/test.pdf')
-    os.remove(path)
+    clear_storage()
 
 
 @dp.callback_query_handler(text=['xlsx csv file'])
@@ -110,8 +114,7 @@ async def convert_xlsx(callback_query: types.CallbackQuery):
     read_file = pd.read_excel("storage/test.xlsx")
     read_file.to_csv(path)
     await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
-    os.remove("storage/test.xlsx")
-    os.remove(path)
+    clear_storage()
 
 
 @dp.callback_query_handler(text='mp3 audio')
@@ -123,8 +126,7 @@ async def convert_video(callback_query: types.CallbackQuery):
     audio.close()
     video.close()
     await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
-    os.remove('storage/test.mp4')
-    os.remove(path)
+    clear_storage()
 
 
 @dp.callback_query_handler(text=['pdf text', 'docx text'])
@@ -147,8 +149,7 @@ async def convert_text(callback_query: types.CallbackQuery):
                 document.add_paragraph(line)
         document.save(path)
         await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
-        os.remove(path)
-    os.remove('storage/test.txt')
+    clear_storage()
 
 
 @dp.callback_query_handler(text=['png photo', 'pdf photo', 'bmp photo', 'jpeg photo'])
@@ -160,12 +161,12 @@ async def convert_photo(callback_query: types.CallbackQuery):
     im_1 = image_1.convert('RGB')
     im_1.save(path)
     await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
-    os.remove(path)
-    os.remove('storage/test.jpg')
+    clear_storage()
 
 
 @dp.message_handler(commands=["start"])
 async def send_welcome(message: types.Message):
+    clear_storage()
     await message.answer("Привет! Конвертер файлов к "
                          "вашим услугам!\n\nЯ могу изменить "
                          "формат вашего файла.\nПросто отправь мне любой файл, а я "
@@ -176,7 +177,7 @@ async def send_welcome(message: types.Message):
 async def photo_processing(message: types):
     extension = "jpg"
     kb = im_kb
-    await message.photo[-1].download('storage/test.jpg')
+    await message.photo[-1].download(destination_file='storage/test.jpg')
     await reply_to_user(extension, kb, message)
 
 
@@ -185,7 +186,7 @@ async def text_processing(message: types):
     try:
         download(message.text)
         await message.answer_document(InputFile('storage/test.mp4'))
-        os.remove('storage/test.mp4')
+        clear_storage()
     except:
         extension = "txt"
         kb = txt_kb
@@ -199,7 +200,7 @@ async def text_processing(message: types):
 async def video_processing(message: types):
     extension = "mp4"
     kb = vid_kb
-    await message.video.download('storage/test.mp4')
+    await message.video.download(destination_file='storage/test.mp4')
     await reply_to_user(extension, kb, message)
 
 
@@ -231,7 +232,7 @@ async def file_processing(message: types):
     else:
         valid = False
     if valid:
-        await message.document.download(f"storage/test.{extension}")
+        await message.document.download(destination_file=f"storage/test.{extension}")
     await reply_to_user(extension, kb, message, valid)
 
 

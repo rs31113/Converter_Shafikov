@@ -30,3 +30,4 @@ urllib3==1.26.14
 yarl==1.8.2
 pytube~=12.1.2
 pdf2docx~=0.5.6
+docx2pdf~=0.1.8
