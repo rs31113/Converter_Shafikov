@@ -12,6 +12,7 @@ from config import TOKEN
 from pdf2docx import parse
 from typing import Tuple
 from docx2pdf import convert
+from heic2png import HEIC2PNG
 
 
 def clear_storage():
@@ -152,12 +153,17 @@ async def convert_text(callback_query: types.CallbackQuery):
     clear_storage()
 
 
-@dp.callback_query_handler(text=['png photo', 'pdf photo', 'bmp photo', 'jpeg photo'])
+@dp.callback_query_handler(text=['png photo', 'pdf photo', 'bmp photo', 'jpeg photo', 'jpg photo'])
 async def convert_photo(callback_query: types.CallbackQuery):
+    convert_from = os.listdir('storage')[0].split('.')[1]
+    if convert_from == 'heic':
+        file = HEIC2PNG('storage/test.heic')
+        file.save()
+        convert_from = 'png'
     to_convert = callback_query.data.split()[0]
     path = f"storage/test.{to_convert}"
     await bot.answer_callback_query(callback_query.id)
-    image_1 = Image.open('storage/test.jpg')
+    image_1 = Image.open(f'storage/test.{convert_from}')
     im_1 = image_1.convert('RGB')
     im_1.save(path)
     await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
@@ -212,6 +218,10 @@ async def file_processing(message: types):
     if extension == "xlsx":
         doc_btn_1 = InlineKeyboardButton('CSV', callback_data='xlsx csv file')
         kb.add(doc_btn_1)
+    elif extension == "heic":
+        btn = InlineKeyboardButton('JPG', callback_data='jpg photo')
+        im_kb.add(btn)
+        kb = im_kb
     elif extension == "docx":
         doc_btn_1 = InlineKeyboardButton('PDF', callback_data='docx pdf file')
         doc_btn_2 = InlineKeyboardButton('TXT', callback_data='docx txt file')
