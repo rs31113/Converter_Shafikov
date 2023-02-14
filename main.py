@@ -109,6 +109,15 @@ async def convert_pdf(callback_query: types.CallbackQuery):
     clear_storage()
 
 
+@dp.callback_query_handler(text=['csv xlsx file'])
+async def convert_csv(callback_query: types.CallbackQuery):
+    path = 'storage/test.xlsx'
+    read_file = pd.read_csv('storage/test.csv')
+    read_file.to_excel(path)
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    clear_storage()
+
+
 @dp.callback_query_handler(text=['xlsx csv file'])
 async def convert_xlsx(callback_query: types.CallbackQuery):
     path = 'storage/test.csv'
@@ -217,6 +226,9 @@ async def file_processing(message: types):
     kb = InlineKeyboardMarkup(row_width=2)
     if extension == "xlsx":
         doc_btn_1 = InlineKeyboardButton('CSV', callback_data='xlsx csv file')
+        kb.add(doc_btn_1)
+    elif extension == "csv":
+        doc_btn_1 = InlineKeyboardButton('XLSX', callback_data='csv xlsx file')
         kb.add(doc_btn_1)
     elif extension == "heic":
         btn = InlineKeyboardButton('JPG', callback_data='jpg photo')
