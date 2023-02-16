@@ -46,7 +46,6 @@ dp = Dispatcher(bot)
 bot_link = hlink('@shafikov_bot', 'https://t.me/shafikov_bot')
 mode = ParseMode.HTML
 
-
 im_btn_1 = InlineKeyboardButton('PDF', callback_data='pdf photo')
 im_btn_2 = InlineKeyboardButton('PNG', callback_data='png photo')
 im_btn_3 = InlineKeyboardButton('BMP', callback_data='bmp photo')
@@ -194,6 +193,15 @@ async def photo_processing(message: types):
     kb = im_kb
     await message.photo[-1].download(destination_file='storage/test.jpg')
     await reply_to_user(extension, kb, message)
+
+
+@dp.message_handler(content_types=['sticker'])
+async def sticker_processing(message: types):
+    chat_id = message['chat']['id']
+    photo = open('storage/test.jpg', 'rb')
+    await message.sticker.download(destination_file='storage/test.jpg')
+    await bot.send_photo(chat_id=chat_id, photo=photo)
+    clear_storage()
 
 
 @dp.message_handler(content_types=['text'])
