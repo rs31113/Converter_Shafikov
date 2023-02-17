@@ -187,8 +187,16 @@ async def send_welcome(message: types.Message):
                          "предложу варианты для конвертации.")
 
 
+@dp.message_handler(content_types=['voice'])
+async def voice_processing(message: types.Message):
+    path = 'storage/test.mp3'
+    await message.voice.download(destination_file=path)
+    await message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    clear_storage()
+
+
 @dp.message_handler(content_types=['photo'])
-async def photo_processing(message: types):
+async def photo_processing(message: types.Message):
     extension = "jpg"
     kb = im_kb
     await message.photo[-1].download(destination_file='storage/test.jpg')
@@ -196,16 +204,16 @@ async def photo_processing(message: types):
 
 
 @dp.message_handler(content_types=['sticker'])
-async def sticker_processing(message: types):
+async def sticker_processing(message: types.Message):
     chat_id = message['chat']['id']
-    photo = open('storage/test.jpg', 'rb')
     await message.sticker.download(destination_file='storage/test.jpg')
+    photo = open('storage/test.jpg', 'rb')
     await bot.send_photo(chat_id=chat_id, photo=photo)
     clear_storage()
 
 
 @dp.message_handler(content_types=['text'])
-async def text_processing(message: types):
+async def text_processing(message: types.Message):
     try:
         download(message.text)
         await message.answer_document(InputFile('storage/test.mp4'))
@@ -220,7 +228,7 @@ async def text_processing(message: types):
 
 
 @dp.message_handler(content_types=['video'])
-async def video_processing(message: types):
+async def video_processing(message: types.Message):
     extension = "mp4"
     kb = vid_kb
     await message.video.download(destination_file='storage/test.mp4')
@@ -228,7 +236,7 @@ async def video_processing(message: types):
 
 
 @dp.message_handler(content_types=['document'])
-async def file_processing(message: types):
+async def file_processing(message: types.Message):
     valid = True
     extension = message.document.file_name.split(".")[1].lower()
     kb = InlineKeyboardMarkup(row_width=2)
