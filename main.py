@@ -35,8 +35,8 @@ def download(youtube_link):
 
 async def reply_to_user(extension, kb, message, valid=True):
     if valid:
-        await message.answer(f"Тип файла - {extension.upper()}.\n"
-                             f"Выберите тип для конвертации:", reply_markup=kb)
+        await message.answer(f"Тип сообщения - {extension.upper()}.\n"
+                             f"Выберите формат для конвертации:", reply_markup=kb)
     else:
         await message.answer("Извините, данный тип файла не поддерживается.")
 
@@ -197,7 +197,7 @@ async def voice_processing(message: types.Message):
 
 @dp.message_handler(content_types=['photo'])
 async def photo_processing(message: types.Message):
-    extension = "jpg"
+    extension = "photo"
     kb = im_kb
     await message.photo[-1].download(destination_file='storage/test.jpg')
     await reply_to_user(extension, kb, message)
