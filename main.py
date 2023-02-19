@@ -46,19 +46,6 @@ dp = Dispatcher(bot)
 bot_link = hlink('@shafikov_bot', 'https://t.me/shafikov_bot')
 mode = ParseMode.HTML
 
-im_btn_1 = InlineKeyboardButton('PDF', callback_data='pdf photo')
-im_btn_2 = InlineKeyboardButton('PNG', callback_data='png photo')
-im_btn_3 = InlineKeyboardButton('BMP', callback_data='bmp photo')
-im_btn_4 = InlineKeyboardButton('JPEG', callback_data='jpeg photo')
-im_kb = InlineKeyboardMarkup(row_width=2).add(im_btn_1, im_btn_2, im_btn_3, im_btn_4)
-
-txt_btn_1 = InlineKeyboardButton('PDF', callback_data='pdf text')
-txt_btn_2 = InlineKeyboardButton('DOCX', callback_data='docx text')
-txt_kb = InlineKeyboardMarkup(row_width=2).add(txt_btn_1, txt_btn_2)
-
-vid_btn = InlineKeyboardButton('MP3', callback_data='mp3 audio')
-vid_kb = InlineKeyboardMarkup().add(vid_btn)
-
 
 @dp.callback_query_handler(text=['docx pdf file', 'docx txt doc', 'docx text file', 'txt text file'])
 async def convert_docx(callback_query: types.CallbackQuery):
@@ -197,8 +184,14 @@ async def voice_processing(message: types.Message):
 
 @dp.message_handler(content_types=['photo'])
 async def photo_processing(message: types.Message):
+    kb = InlineKeyboardMarkup(row_width=2)
+    btn_1 = InlineKeyboardButton('PDF', callback_data='pdf photo')
+    btn_2 = InlineKeyboardButton('PNG', callback_data='png photo')
+    btn_3 = InlineKeyboardButton('BMP', callback_data='bmp photo')
+    btn_4 = InlineKeyboardButton('JPEG', callback_data='jpeg photo')
+    btn_5 = InlineKeyboardButton('JPG', callback_data='jpg photo')
+    kb.add(btn_1, btn_2, btn_3, btn_4, btn_5)
     extension = "photo"
-    kb = im_kb
     await message.photo[-1].download(destination_file='storage/test.jpg')
     await reply_to_user(extension, kb, message)
 
@@ -219,8 +212,11 @@ async def text_processing(message: types.Message):
         await message.answer_document(InputFile('storage/test.mp4'))
         clear_storage()
     except:
+        kb = InlineKeyboardMarkup(row_width=2)
+        btn_1 = InlineKeyboardButton('PDF', callback_data='pdf text')
+        btn_2 = InlineKeyboardButton('DOCX', callback_data='docx text')
+        kb.add(btn_1, btn_2)
         extension = "txt"
-        kb = txt_kb
         file = open('storage/test.txt', 'w+')
         file.write(message.text)
         file.close()
@@ -229,8 +225,10 @@ async def text_processing(message: types.Message):
 
 @dp.message_handler(content_types=['video'])
 async def video_processing(message: types.Message):
+    kb = InlineKeyboardMarkup(row_width=2)
+    btn_1 = InlineKeyboardButton('MP3', callback_data='mp3 audio')
+    kb.add(btn_1)
     extension = "mp4"
-    kb = vid_kb
     await message.video.download(destination_file='storage/test.mp4')
     await reply_to_user(extension, kb, message)
 
@@ -241,32 +239,43 @@ async def file_processing(message: types.Message):
     extension = message.document.file_name.split(".")[1].lower()
     kb = InlineKeyboardMarkup(row_width=2)
     if extension == "xlsx":
-        doc_btn_1 = InlineKeyboardButton('CSV', callback_data='xlsx csv file')
-        kb.add(doc_btn_1)
+        btn_1 = InlineKeyboardButton('CSV', callback_data='xlsx csv file')
+        kb.add(btn_1)
     elif extension == "csv":
-        doc_btn_1 = InlineKeyboardButton('XLSX', callback_data='csv xlsx file')
-        kb.add(doc_btn_1)
+        btn_1 = InlineKeyboardButton('XLSX', callback_data='csv xlsx file')
+        kb.add(btn_1)
     elif extension == "heic":
         btn = InlineKeyboardButton('JPG', callback_data='jpg photo')
         im_kb.add(btn)
         kb = im_kb
     elif extension == "docx":
-        doc_btn_1 = InlineKeyboardButton('PDF', callback_data='docx pdf file')
-        doc_btn_2 = InlineKeyboardButton('TXT', callback_data='docx txt file')
-        doc_btn_3 = InlineKeyboardButton('text message', callback_data='docx text file')
-        kb.add(doc_btn_1, doc_btn_2, doc_btn_3)
+        btn_1 = InlineKeyboardButton('PDF', callback_data='docx pdf file')
+        btn_2 = InlineKeyboardButton('TXT', callback_data='docx txt file')
+        btn_3 = InlineKeyboardButton('text message', callback_data='docx text file')
+        kb.add(btn_1, btn_2, btn_3)
     elif extension == "txt":
         kb.add(InlineKeyboardButton('text message', callback_data='txt text file'))
     elif extension == "pdf":
-        doc_btn_1 = InlineKeyboardButton('DOCX', callback_data='pdf docx file')
-        kb.add(doc_btn_1)
+        btn_1 = InlineKeyboardButton('DOCX', callback_data='pdf docx file')
+        kb.add(btn_1)
     elif extension == "png":
-        doc_btn_1 = InlineKeyboardButton('JPEG', callback_data='png jpeg file')
-        doc_btn_2 = InlineKeyboardButton('PDF', callback_data='png pdf file')
-        doc_btn_3 = InlineKeyboardButton('JPG', callback_data='png jpg file')
-        kb.add(doc_btn_1, doc_btn_2, doc_btn_3)
+        btn_1 = InlineKeyboardButton('JPEG', callback_data='png jpeg file')
+        btn_2 = InlineKeyboardButton('PDF', callback_data='png pdf file')
+        btn_3 = InlineKeyboardButton('JPG', callback_data='png jpg file')
+        btn_4 = InlineKeyboardButton('BMP', callback_data='bmp photo')
+        kb.add(btn_1, btn_2, btn_3, btn_4)
     elif extension == "jpg":
-        kb = im_kb
+        btn_1 = InlineKeyboardButton('PDF', callback_data='pdf photo')
+        btn_2 = InlineKeyboardButton('PNG', callback_data='png photo')
+        btn_3 = InlineKeyboardButton('BMP', callback_data='bmp photo')
+        btn_4 = InlineKeyboardButton('JPEG', callback_data='jpeg photo')
+        kb.add(btn_1, btn_2, btn_3, btn_4)
+    elif extension == "jpeg":
+        btn_1 = InlineKeyboardButton('PDF', callback_data='pdf photo')
+        btn_2 = InlineKeyboardButton('PNG', callback_data='png photo')
+        btn_3 = InlineKeyboardButton('BMP', callback_data='bmp photo')
+        btn_4 = InlineKeyboardButton('JPG', callback_data='jpg photo')
+        kb.add(btn_1, btn_2, btn_3, btn_4)
     else:
         valid = False
     if valid:
