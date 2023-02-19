@@ -3,7 +3,6 @@ from aiogram.types import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton,
 from aiogram.utils.markdown import hlink
 from PIL import Image
 from docx import Document
-from fpdf import FPDF
 import os
 from pytube import YouTube
 import pandas as pd
@@ -27,7 +26,7 @@ def convert_pdf2docx(input_file: str, output_file: str, pages: Tuple = None):
     return result
 
 
-def download(youtube_link):
+def download_from_youtube(youtube_link):
     video = YouTube(youtube_link)
     video = video.streams.get_highest_resolution()
     video.download('storage', 'test.mp4')
@@ -47,47 +46,54 @@ bot_link = hlink('@shafikov_bot', 'https://t.me/shafikov_bot')
 mode = ParseMode.HTML
 
 
-@dp.callback_query_handler(text=['docx pdf file', 'docx txt doc', 'docx text file', 'txt text file'])
-async def convert_docx(callback_query: types.CallbackQuery):
-    source_format = callback_query.data.split()[0]
-    if source_format == 'txt':
-        f = open("storage/test.txt", "r")
-        f = f.readlines()
-        text = [elem for elem in f]
-        text = '\n'.join(text)
+jpeg_btn = InlineKeyboardButton('JPEG', callback_data='jpeg')
+pdf_btn = InlineKeyboardButton('PDF', callback_data='pdf')
+jpg_btn = InlineKeyboardButton('JPG', callback_data='jpg')
+bmp_btn = InlineKeyboardButton('BMP', callback_data='bmp')
+png_btn = InlineKeyboardButton('PNG', callback_data='png')
+
+
+@dp.callback_query_handler(text=['txt text', 'txt docx'])
+async def convert_txt(callback_query: types.CallbackQuery):
+    convert_to = callback_query.data.split()[1]
+    path = 'storage/test.docx'
+    f = open("storage/test.txt", "r")
+    f = f.readlines()
+    heading = f[0]
+    f.pop(0)
+    text = '\n'.join([elem for elem in f])
+    if convert_to == 'text':
         await callback_query.message.answer(text)
     else:
-        convert_to = callback_query.data.split()[1]
-        path = f'storage/test.{convert_to}'
-        if convert_to == 'text' or convert_to == 'txt':
-            doc = Document(f"storage/test.docx")
-            result = [p.text for p in doc.paragraphs]
-            result = '\n'.join(result)
-            if convert_to == 'text':
-                await callback_query.message.answer(result)
-            else:
-                with open(path, "w") as f:
-                    f.write(result)
-                f.close()
-                await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
-        else:
-            convert('storage/test.docx', 'storage/test.pdf')
+        document = Document()
+        document.add_heading(heading)
+        document.add_paragraph(text)
+        document.save(path)
+        await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     clear_storage()
 
 
-@dp.callback_query_handler(text=['png jpeg file', 'png jpg file', 'png pdf file'])
-async def convert_png(callback_query: types.CallbackQuery):
+@dp.callback_query_handler(text=['docx pdf', 'docx txt', 'docx text'])
+async def convert_docx(callback_query: types.CallbackQuery):
     convert_to = callback_query.data.split()[1]
-    path = f"storage/test.{convert_to}"
-    await bot.answer_callback_query(callback_query.id)
-    image_1 = Image.open('storage/test.png')
-    im_1 = image_1.convert('RGB')
-    im_1.save(path)
-    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    path = f'storage/test.{convert_to}'
+    if convert_to == 'text' or convert_to == 'txt':
+        doc = Document(f"storage/test.docx")
+        result = [p.text for p in doc.paragraphs]
+        result = '\n'.join(result)
+        if convert_to == 'text':
+            await callback_query.message.answer(result)
+        else:
+            with open(path, "w") as f:
+                f.write(result)
+            f.close()
+            await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    else:
+        convert('storage/test.docx', 'storage/test.pdf')
     clear_storage()
 
 
-@dp.callback_query_handler(text=['pdf docx file'])
+@dp.callback_query_handler(text=['pdf docx'])
 async def convert_pdf(callback_query: types.CallbackQuery):
     path = 'storage/test.docx'
     convert_pdf2docx('storage/test.pdf', path)
@@ -95,7 +101,7 @@ async def convert_pdf(callback_query: types.CallbackQuery):
     clear_storage()
 
 
-@dp.callback_query_handler(text=['csv xlsx file'])
+@dp.callback_query_handler(text=['csv xlsx'])
 async def convert_csv(callback_query: types.CallbackQuery):
     path = 'storage/test.xlsx'
     read_file = pd.read_csv('storage/test.csv')
@@ -104,7 +110,7 @@ async def convert_csv(callback_query: types.CallbackQuery):
     clear_storage()
 
 
-@dp.callback_query_handler(text=['xlsx csv file'])
+@dp.callback_query_handler(text=['xlsx csv'])
 async def convert_xlsx(callback_query: types.CallbackQuery):
     path = 'storage/test.csv'
     read_file = pd.read_excel("storage/test.xlsx")
@@ -113,7 +119,7 @@ async def convert_xlsx(callback_query: types.CallbackQuery):
     clear_storage()
 
 
-@dp.callback_query_handler(text='mp3 audio')
+@dp.callback_query_handler(text=['video mp3'])
 async def convert_video(callback_query: types.CallbackQuery):
     video = VideoFileClip('storage/test.mp4')
     audio = video.audio
@@ -125,20 +131,13 @@ async def convert_video(callback_query: types.CallbackQuery):
     clear_storage()
 
 
-@dp.callback_query_handler(text=['pdf text', 'docx text'])
+@dp.callback_query_handler(text=['text txt', 'text docx'])
 async def convert_text(callback_query: types.CallbackQuery):
-    message_format = callback_query.data.split()[0]
-    path = f'storage/test.{message_format}'
-    if message_format == "pdf":
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=15)
-        for line in open("storage/test.txt", "r+", encoding='utf-8'):
-            pdf.cell(200, 10, txt=line, ln=1, align='L')
-        pdf.output(path)
+    to_convert = callback_query.data.split()[1]
+    path = f'storage/test.{to_convert}'
+    if to_convert == "txt":
         await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
-        os.remove(path)
-    elif message_format == "docx":
+    else:
         document = Document()
         with open('storage/test.txt') as f:
             for line in f:
@@ -148,15 +147,15 @@ async def convert_text(callback_query: types.CallbackQuery):
     clear_storage()
 
 
-@dp.callback_query_handler(text=['png photo', 'pdf photo', 'bmp photo', 'jpeg photo', 'jpg photo'])
+@dp.callback_query_handler(text=['png', 'pdf', 'bmp', 'jpeg', 'jpg'])
 async def convert_photo(callback_query: types.CallbackQuery):
     convert_from = os.listdir('storage')[0].split('.')[1]
+    convert_to = callback_query.data.split()[0]
+    path = f"storage/test.{convert_to}"
     if convert_from == 'heic':
         file = HEIC2PNG('storage/test.heic')
         file.save()
         convert_from = 'png'
-    to_convert = callback_query.data.split()[0]
-    path = f"storage/test.{to_convert}"
     await bot.answer_callback_query(callback_query.id)
     image_1 = Image.open(f'storage/test.{convert_from}')
     im_1 = image_1.convert('RGB')
@@ -165,7 +164,7 @@ async def convert_photo(callback_query: types.CallbackQuery):
     clear_storage()
 
 
-@dp.message_handler(commands=["start"])
+@dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     clear_storage()
     await message.answer("Привет! Конвертер файлов к "
@@ -185,12 +184,7 @@ async def voice_processing(message: types.Message):
 @dp.message_handler(content_types=['photo'])
 async def photo_processing(message: types.Message):
     kb = InlineKeyboardMarkup(row_width=2)
-    btn_1 = InlineKeyboardButton('PDF', callback_data='pdf photo')
-    btn_2 = InlineKeyboardButton('PNG', callback_data='png photo')
-    btn_3 = InlineKeyboardButton('BMP', callback_data='bmp photo')
-    btn_4 = InlineKeyboardButton('JPEG', callback_data='jpeg photo')
-    btn_5 = InlineKeyboardButton('JPG', callback_data='jpg photo')
-    kb.add(btn_1, btn_2, btn_3, btn_4, btn_5)
+    kb.add(jpg_btn, jpeg_btn, png_btn, pdf_btn, bmp_btn)
     extension = "photo"
     await message.photo[-1].download(destination_file='storage/test.jpg')
     await reply_to_user(extension, kb, message)
@@ -201,22 +195,22 @@ async def sticker_processing(message: types.Message):
     chat_id = message['chat']['id']
     await message.sticker.download(destination_file='storage/test.jpg')
     photo = open('storage/test.jpg', 'rb')
-    await bot.send_photo(chat_id=chat_id, photo=photo)
+    await bot.send_photo(chat_id=chat_id, photo=photo, caption=bot_link, parse_mode=mode)
     clear_storage()
 
 
 @dp.message_handler(content_types=['text'])
 async def text_processing(message: types.Message):
     try:
-        download(message.text)
-        await message.answer_document(InputFile('storage/test.mp4'))
+        download_from_youtube(message.text)
+        await message.answer_document(InputFile('storage/test.mp4'), caption=bot_link, parse_mode=mode)
         clear_storage()
     except:
         kb = InlineKeyboardMarkup(row_width=2)
-        btn_1 = InlineKeyboardButton('PDF', callback_data='pdf text')
-        btn_2 = InlineKeyboardButton('DOCX', callback_data='docx text')
+        btn_1 = InlineKeyboardButton('TXT', callback_data='text txt')
+        btn_2 = InlineKeyboardButton('DOCX', callback_data='text docx')
         kb.add(btn_1, btn_2)
-        extension = "txt"
+        extension = "text"
         file = open('storage/test.txt', 'w+')
         file.write(message.text)
         file.close()
@@ -226,7 +220,7 @@ async def text_processing(message: types.Message):
 @dp.message_handler(content_types=['video'])
 async def video_processing(message: types.Message):
     kb = InlineKeyboardMarkup(row_width=2)
-    btn_1 = InlineKeyboardButton('MP3', callback_data='mp3 audio')
+    btn_1 = InlineKeyboardButton('MP3', callback_data='video mp3')
     kb.add(btn_1)
     extension = "mp4"
     await message.video.download(destination_file='storage/test.mp4')
@@ -239,43 +233,33 @@ async def file_processing(message: types.Message):
     extension = message.document.file_name.split(".")[1].lower()
     kb = InlineKeyboardMarkup(row_width=2)
     if extension == "xlsx":
-        btn_1 = InlineKeyboardButton('CSV', callback_data='xlsx csv file')
+        btn_1 = InlineKeyboardButton('CSV', callback_data='xlsx csv')
         kb.add(btn_1)
     elif extension == "csv":
-        btn_1 = InlineKeyboardButton('XLSX', callback_data='csv xlsx file')
+        btn_1 = InlineKeyboardButton('XLSX', callback_data='csv xlsx')
         kb.add(btn_1)
     elif extension == "heic":
-        btn = InlineKeyboardButton('JPG', callback_data='jpg photo')
-        im_kb.add(btn)
-        kb = im_kb
+        kb.add(png_btn, jpg_btn, jpeg_btn, pdf_btn, bmp_btn)
     elif extension == "docx":
-        btn_1 = InlineKeyboardButton('PDF', callback_data='docx pdf file')
-        btn_2 = InlineKeyboardButton('TXT', callback_data='docx txt file')
-        btn_3 = InlineKeyboardButton('text message', callback_data='docx text file')
+        btn_1 = InlineKeyboardButton('PDF', callback_data='docx pdf')
+        btn_2 = InlineKeyboardButton('TXT', callback_data='docx txt')
+        btn_3 = InlineKeyboardButton('text message', callback_data='docx text')
         kb.add(btn_1, btn_2, btn_3)
     elif extension == "txt":
-        kb.add(InlineKeyboardButton('text message', callback_data='txt text file'))
+        btn_1 = InlineKeyboardButton('text message', callback_data='txt text')
+        btn_2 = InlineKeyboardButton('DOCX', callback_data='txt docx')
+        kb.add(btn_1, btn_2)
     elif extension == "pdf":
-        btn_1 = InlineKeyboardButton('DOCX', callback_data='pdf docx file')
+        btn_1 = InlineKeyboardButton('DOCX', callback_data='pdf docx')
         kb.add(btn_1)
     elif extension == "png":
-        btn_1 = InlineKeyboardButton('JPEG', callback_data='png jpeg file')
-        btn_2 = InlineKeyboardButton('PDF', callback_data='png pdf file')
-        btn_3 = InlineKeyboardButton('JPG', callback_data='png jpg file')
-        btn_4 = InlineKeyboardButton('BMP', callback_data='bmp photo')
-        kb.add(btn_1, btn_2, btn_3, btn_4)
+        kb.add(jpg_btn, jpeg_btn, bmp_btn, pdf_btn)
     elif extension == "jpg":
-        btn_1 = InlineKeyboardButton('PDF', callback_data='pdf photo')
-        btn_2 = InlineKeyboardButton('PNG', callback_data='png photo')
-        btn_3 = InlineKeyboardButton('BMP', callback_data='bmp photo')
-        btn_4 = InlineKeyboardButton('JPEG', callback_data='jpeg photo')
-        kb.add(btn_1, btn_2, btn_3, btn_4)
+        kb.add(png_btn, jpeg_btn, bmp_btn, pdf_btn)
     elif extension == "jpeg":
-        btn_1 = InlineKeyboardButton('PDF', callback_data='pdf photo')
-        btn_2 = InlineKeyboardButton('PNG', callback_data='png photo')
-        btn_3 = InlineKeyboardButton('BMP', callback_data='bmp photo')
-        btn_4 = InlineKeyboardButton('JPG', callback_data='jpg photo')
-        kb.add(btn_1, btn_2, btn_3, btn_4)
+        kb.add(jpg_btn, png_btn, bmp_btn, pdf_btn)
+    elif extension == "bmp":
+        kb.add(jpg_btn, jpeg_btn, png_btn, pdf_btn)
     else:
         valid = False
     if valid:
