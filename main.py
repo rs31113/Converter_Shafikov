@@ -144,9 +144,9 @@ async def convert_to_mp4(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(text=['text txt', 'text docx'])
 async def convert_text(callback_query: types.CallbackQuery):
-    to_convert = callback_query.data.split()[1]
-    path = f'storage/test.{to_convert}'
-    if to_convert == "txt":
+    convert_to = callback_query.data.split()[1]
+    path = f'storage/test.{convert_to}'
+    if convert_to == "txt":
         await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     else:
         document = Document()
