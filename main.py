@@ -6,7 +6,7 @@ from docx import Document
 import os
 from pytube import YouTube
 import pandas as pd
-from moviepy.editor import VideoFileClip
+import moviepy.editor as moviepy
 from config import TOKEN
 from pdf2docx import parse
 from typing import Tuple
@@ -51,6 +51,7 @@ pdf_btn = InlineKeyboardButton('PDF', callback_data='pdf')
 jpg_btn = InlineKeyboardButton('JPG', callback_data='jpg')
 bmp_btn = InlineKeyboardButton('BMP', callback_data='bmp')
 png_btn = InlineKeyboardButton('PNG', callback_data='png')
+photo_btn = InlineKeyboardButton('PHOTO', callback_data='photo')
 
 
 @dp.callback_query_handler(text=['txt text', 'txt docx'])
@@ -121,7 +122,7 @@ async def convert_xlsx(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(text=['video mp3'])
 async def convert_video(callback_query: types.CallbackQuery):
-    video = VideoFileClip('storage/test.mp4')
+    video = moviepy.VideoFileClip('storage/test.mp4')
     audio = video.audio
     path = 'storage/test.mp3'
     audio.write_audiofile(path)
@@ -129,6 +130,16 @@ async def convert_video(callback_query: types.CallbackQuery):
     video.close()
     await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     clear_storage()
+
+
+@dp.callback_query_handler(text=['mov', 'avi'])
+async def convert_to_mp4(callback_query: types.CallbackQuery):
+    convert_to = callback_query.data.split()[0]
+    path = 'storage/test.mp4'
+    video = moviepy.VideoFileClip(f'storage/test.{convert_to}')
+    video.write_videofile(path)
+    video.close()
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
 
 
 @dp.callback_query_handler(text=['text txt', 'text docx'])
@@ -147,20 +158,25 @@ async def convert_text(callback_query: types.CallbackQuery):
     clear_storage()
 
 
-@dp.callback_query_handler(text=['png', 'pdf', 'bmp', 'jpeg', 'jpg'])
+@dp.callback_query_handler(text=['png', 'pdf', 'bmp', 'jpeg', 'jpg', 'photo'])
 async def convert_photo(callback_query: types.CallbackQuery):
     convert_from = os.listdir('storage')[0].split('.')[1]
     convert_to = callback_query.data.split()[0]
-    path = f"storage/test.{convert_to}"
-    if convert_from == 'heic':
-        file = HEIC2PNG('storage/test.heic')
-        file.save()
-        convert_from = 'png'
-    await bot.answer_callback_query(callback_query.id)
-    image_1 = Image.open(f'storage/test.{convert_from}')
-    im_1 = image_1.convert('RGB')
-    im_1.save(path)
-    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    if convert_to == 'photo':
+        chat_id = callback_query.message['chat']['id']
+        photo = open(f'storage/test.{convert_from}', 'rb')
+        await bot.send_photo(chat_id=chat_id, photo=photo, caption=bot_link, parse_mode=mode)
+    else:
+        path = f"storage/test.{convert_to}"
+        if convert_from == 'heic':
+            file = HEIC2PNG('storage/test.heic')
+            file.save()
+            convert_from = 'png'
+        await bot.answer_callback_query(callback_query.id)
+        image_1 = Image.open(f'storage/test.{convert_from}')
+        im_1 = image_1.convert('RGB')
+        im_1.save(path)
+        await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     clear_storage()
 
 
@@ -192,11 +208,11 @@ async def photo_processing(message: types.Message):
 
 @dp.message_handler(content_types=['sticker'])
 async def sticker_processing(message: types.Message):
-    chat_id = message['chat']['id']
+    kb = InlineKeyboardMarkup(row_width=2)
+    extension = "STICKER"
+    kb.add(jpg_btn, jpeg_btn, png_btn, pdf_btn, bmp_btn, photo_btn)
     await message.sticker.download(destination_file='storage/test.jpg')
-    photo = open('storage/test.jpg', 'rb')
-    await bot.send_photo(chat_id=chat_id, photo=photo, caption=bot_link, parse_mode=mode)
-    clear_storage()
+    await reply_to_user(extension, kb, message)
 
 
 @dp.message_handler(content_types=['text'])
@@ -249,17 +265,20 @@ async def file_processing(message: types.Message):
         btn_1 = InlineKeyboardButton('text message', callback_data='txt text')
         btn_2 = InlineKeyboardButton('DOCX', callback_data='txt docx')
         kb.add(btn_1, btn_2)
+    elif extension in ["mov", "avi"]:
+        btn_1 = InlineKeyboardButton('MP4', callback_data=extension)
+        kb.add(btn_1)
     elif extension == "pdf":
         btn_1 = InlineKeyboardButton('DOCX', callback_data='pdf docx')
         kb.add(btn_1)
     elif extension == "png":
-        kb.add(jpg_btn, jpeg_btn, bmp_btn, pdf_btn)
+        kb.add(jpg_btn, jpeg_btn, bmp_btn, pdf_btn, photo_btn)
     elif extension == "jpg":
-        kb.add(png_btn, jpeg_btn, bmp_btn, pdf_btn)
+        kb.add(png_btn, jpeg_btn, bmp_btn, pdf_btn, photo_btn)
     elif extension == "jpeg":
-        kb.add(jpg_btn, png_btn, bmp_btn, pdf_btn)
+        kb.add(jpg_btn, png_btn, bmp_btn, pdf_btn, photo_btn)
     elif extension == "bmp":
-        kb.add(jpg_btn, jpeg_btn, png_btn, pdf_btn)
+        kb.add(jpg_btn, jpeg_btn, png_btn, pdf_btn, photo_btn)
     else:
         valid = False
     if valid:
