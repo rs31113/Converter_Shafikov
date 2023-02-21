@@ -41,4 +41,3 @@ tqdm==4.64.1
 urllib3==1.26.14
 yarl==1.8.2
 gunicorn==19.7.1
-opencv-python==2.4.9
