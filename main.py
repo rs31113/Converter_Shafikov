@@ -11,11 +11,19 @@ from config import TOKEN
 from typing import Tuple
 from docx2pdf import convert
 from heic2png import HEIC2PNG
+from pdf2docx import parse
 
 
 def clear_storage():
     for file in os.listdir("storage"):
         os.remove(f'storage/{file}')
+
+
+def convert_pdf2docx(input_file: str, output_file: str, pages: Tuple = None):
+    if pages:
+        pages = [int(i) for i in list(pages) if i.isnumeric()]
+    result = parse(pdf_file=input_file, docx_with_path=output_file, pages=pages)
+    return result
 
 
 def download_from_youtube(youtube_link):
@@ -83,6 +91,14 @@ async def convert_docx(callback_query: types.CallbackQuery):
             await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     else:
         convert('storage/test.docx', 'storage/test.pdf')
+    clear_storage()
+
+
+@dp.callback_query_handler(text=['pdf docx'])
+async def convert_pdf(callback_query: types.CallbackQuery):
+    path = 'storage/test.docx'
+    convert_pdf2docx('storage/test.pdf', path)
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     clear_storage()
 
 
@@ -245,6 +261,9 @@ async def file_processing(message: types.Message):
         btn_2 = InlineKeyboardButton('TXT', callback_data='docx txt')
         btn_3 = InlineKeyboardButton('text message', callback_data='docx text')
         kb.add(btn_1, btn_2, btn_3)
+    elif extension == "pdf":
+        btn_1 = InlineKeyboardButton('DOCX', callback_data='pdf docx')
+        kb.add(btn_1)
     elif extension == "txt":
         btn_1 = InlineKeyboardButton('text message', callback_data='txt text')
         btn_2 = InlineKeyboardButton('DOCX', callback_data='txt docx')
