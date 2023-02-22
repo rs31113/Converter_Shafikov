@@ -7,7 +7,6 @@ import os
 from pytube import YouTube
 import moviepy.editor as moviepy
 from config import TOKEN
-from pdf2docx import parse
 from typing import Tuple
 from docx2pdf import convert
 from heic2png import HEIC2PNG
@@ -16,13 +15,6 @@ from heic2png import HEIC2PNG
 def clear_storage():
     for file in os.listdir("storage"):
         os.remove(f'storage/{file}')
-
-
-def convert_pdf2docx(input_file: str, output_file: str, pages: Tuple = None):
-    if pages:
-        pages = [int(i) for i in list(pages) if i.isnumeric()]
-    result = parse(pdf_file=input_file, docx_with_path=output_file, pages=pages)
-    return result
 
 
 def download_from_youtube(youtube_link):
@@ -90,14 +82,6 @@ async def convert_docx(callback_query: types.CallbackQuery):
             await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     else:
         convert('storage/test.docx', 'storage/test.pdf')
-    clear_storage()
-
-
-@dp.callback_query_handler(text=['pdf docx'])
-async def convert_pdf(callback_query: types.CallbackQuery):
-    path = 'storage/test.docx'
-    convert_pdf2docx('storage/test.pdf', path)
-    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     clear_storage()
 
 
@@ -242,9 +226,6 @@ async def file_processing(message: types.Message):
         kb.add(btn_1, btn_2)
     elif extension in ["mov", "avi"]:
         btn_1 = InlineKeyboardButton('MP4', callback_data=extension)
-        kb.add(btn_1)
-    elif extension == "pdf":
-        btn_1 = InlineKeyboardButton('DOCX', callback_data='pdf docx')
         kb.add(btn_1)
     elif extension == "png":
         kb.add(jpg_btn, jpeg_btn, bmp_btn, pdf_btn, photo_btn)
