@@ -18,4 +18,3 @@ install:
 	# Used for packaging and publishing
 	pip install -r requirements.txt
 	pip install pdf2docx --no-deps
-	pip install fitz
