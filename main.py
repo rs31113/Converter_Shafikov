@@ -3,6 +3,7 @@ from aiogram.types import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton,
 from aiogram.utils.markdown import hlink
 from PIL import Image
 from docx import Document
+import pandas as pd
 import os
 from pytube import YouTube
 import moviepy.editor as moviepy
