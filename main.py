@@ -85,6 +85,24 @@ async def convert_docx(callback_query: types.CallbackQuery):
     clear_storage()
 
 
+@dp.callback_query_handler(text=['csv xlsx'])
+async def convert_csv(callback_query: types.CallbackQuery):
+    path = 'storage/test.xlsx'
+    read_file = pd.read_csv('storage/test.csv')
+    read_file.to_excel(path)
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    clear_storage()
+
+
+@dp.callback_query_handler(text=['xlsx csv'])
+async def convert_xlsx(callback_query: types.CallbackQuery):
+    path = 'storage/test.csv'
+    read_file = pd.read_excel("storage/test.xlsx")
+    read_file.to_csv(path)
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    clear_storage()
+
+
 @dp.callback_query_handler(text=['video mp3'])
 async def convert_video(callback_query: types.CallbackQuery):
     video = moviepy.VideoFileClip('storage/test.mp4')
@@ -213,7 +231,13 @@ async def file_processing(message: types.Message):
     valid = True
     extension = message.document.file_name.split(".")[1].lower()
     kb = InlineKeyboardMarkup(row_width=2)
-    if extension == "heic":
+    if extension == "xlsx":
+        btn_1 = InlineKeyboardButton('CSV', callback_data='xlsx csv')
+        kb.add(btn_1)
+    elif extension == "csv":
+        btn_1 = InlineKeyboardButton('XLSX', callback_data='csv xlsx')
+        kb.add(btn_1)
+    elif extension == "heic":
         kb.add(png_btn, jpg_btn, jpeg_btn, pdf_btn, bmp_btn)
     elif extension == "docx":
         btn_1 = InlineKeyboardButton('PDF', callback_data='docx pdf')
