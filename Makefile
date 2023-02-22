@@ -17,5 +17,5 @@ install:
 	python -m pip install --upgrade pip
 	# Used for packaging and publishing
 	pip install -r requirements.txt
-	pip uninstall opencv-python
-	pip install opencv-
+	pip install pdf2docx --no-deps
+	pip install fitz
