@@ -14,6 +14,19 @@ from heic2png import HEIC2PNG
 from pdf2docx import parse
 
 
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
+bot_link = hlink('@shafikov_bot', 'https://t.me/shafikov_bot')
+mode = ParseMode.HTML
+
+jpeg_btn = InlineKeyboardButton('JPEG', callback_data='jpeg')
+pdf_btn = InlineKeyboardButton('PDF', callback_data='pdf')
+jpg_btn = InlineKeyboardButton('JPG', callback_data='jpg')
+bmp_btn = InlineKeyboardButton('BMP', callback_data='bmp')
+png_btn = InlineKeyboardButton('PNG', callback_data='png')
+photo_btn = InlineKeyboardButton('PHOTO', callback_data='photo')
+
+
 def clear_storage(chat_id):
     for file in os.listdir(f"storage/{chat_id}"):
         os.remove(f'storage/{chat_id}/{file}')
@@ -32,6 +45,11 @@ def download_from_youtube(youtube_link):
     video.download('storage', f'{chat_id}', 'test.mp4')
 
 
+async def request_processing(message, chat_id):
+    await bot.delete_message(chat_id=chat_id, message_id=message.message_id)
+    await message.answer('Конвертирую...')
+
+
 async def reply_to_user(extension, kb, message, valid=True):
     if valid:
         await message.answer(f"Тип сообщения - {extension.upper()}.\n"
@@ -40,23 +58,10 @@ async def reply_to_user(extension, kb, message, valid=True):
         await message.answer("Извините, данный тип файла не поддерживается.")
 
 
-bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
-bot_link = hlink('@shafikov_bot', 'https://t.me/shafikov_bot')
-mode = ParseMode.HTML
-
-
-jpeg_btn = InlineKeyboardButton('JPEG', callback_data='jpeg')
-pdf_btn = InlineKeyboardButton('PDF', callback_data='pdf')
-jpg_btn = InlineKeyboardButton('JPG', callback_data='jpg')
-bmp_btn = InlineKeyboardButton('BMP', callback_data='bmp')
-png_btn = InlineKeyboardButton('PNG', callback_data='png')
-photo_btn = InlineKeyboardButton('PHOTO', callback_data='photo')
-
-
 @dp.callback_query_handler(text=['txt text', 'txt docx'])
 async def convert_txt(callback_query: types.CallbackQuery):
     chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
     convert_to = callback_query.data.split()[1]
     path = f'storage/{chat_id}/test.docx'
     f = open(f"storage/{chat_id}/test.txt", "r")
@@ -77,8 +82,9 @@ async def convert_txt(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(text=['docx pdf', 'docx txt', 'docx text'])
 async def convert_docx(callback_query: types.CallbackQuery):
-    convert_to = callback_query.data.split()[1]
     chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
+    convert_to = callback_query.data.split()[1]
     path = f'storage/{chat_id}/test.{convert_to}'
     if convert_to == 'text' or convert_to == 'txt':
         doc = Document(f"storage/{chat_id}/test.docx")
@@ -93,12 +99,14 @@ async def convert_docx(callback_query: types.CallbackQuery):
             await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     else:
         convert(f'storage/{chat_id}/test.docx', f'storage/{chat_id}/test.pdf')
+        await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     clear_storage(chat_id)
 
 
 @dp.callback_query_handler(text=['pdf docx'])
 async def convert_pdf(callback_query: types.CallbackQuery):
     chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
     path = f'storage/{chat_id}/test.docx'
     convert_pdf2docx(f'storage/{chat_id}/test.pdf', path)
     await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
@@ -108,6 +116,7 @@ async def convert_pdf(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(text=['csv xlsx'])
 async def convert_csv(callback_query: types.CallbackQuery):
     chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
     path = f'storage/{chat_id}/test.xlsx'
     read_file = pd.read_csv(f'storage/{chat_id}/test.csv')
     read_file.to_excel(path)
@@ -118,6 +127,7 @@ async def convert_csv(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(text=['xlsx csv'])
 async def convert_xlsx(callback_query: types.CallbackQuery):
     chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
     path = f'storage/{chat_id}/test.csv'
     read_file = pd.read_excel(f"storage/{chat_id}/test.xlsx")
     read_file.to_csv(path)
@@ -128,6 +138,7 @@ async def convert_xlsx(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(text=['video mp3'])
 async def convert_video(callback_query: types.CallbackQuery):
     chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
     video = moviepy.VideoFileClip(f'storage/{chat_id}/test.mp4')
     audio = video.audio
     path = f'storage/{chat_id}/test.mp3'
@@ -141,6 +152,7 @@ async def convert_video(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(text=['mov', 'avi'])
 async def convert_to_mp4(callback_query: types.CallbackQuery):
     chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
     convert_to = callback_query.data.split()[0]
     path = f'storage/{chat_id}/test.mp4'
     video = moviepy.VideoFileClip(f'storage/{chat_id}/test.{convert_to}')
@@ -153,6 +165,7 @@ async def convert_to_mp4(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(text=['text txt', 'text docx'])
 async def convert_text(callback_query: types.CallbackQuery):
     chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
     convert_to = callback_query.data.split()[1]
     path = f'storage/{chat_id}/test.{convert_to}'
     if convert_to == "txt":
@@ -170,6 +183,7 @@ async def convert_text(callback_query: types.CallbackQuery):
 @dp.callback_query_handler(text=['png', 'pdf', 'bmp', 'jpeg', 'jpg', 'photo'])
 async def convert_photo(callback_query: types.CallbackQuery):
     chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
     convert_from = os.listdir(f'storage/{chat_id}')[0].split('.')[1]
     convert_to = callback_query.data.split()[0]
     if convert_to == 'photo':
@@ -181,7 +195,6 @@ async def convert_photo(callback_query: types.CallbackQuery):
             file = HEIC2PNG(f'storage/{chat_id}/test.heic')
             file.save()
             convert_from = 'png'
-        await bot.answer_callback_query(callback_query.id)
         image_1 = Image.open(f'storage/{chat_id}/test.{convert_from}')
         im_1 = image_1.convert('RGB')
         im_1.save(path)
