@@ -15,6 +15,5 @@ init:
 install: ## Installs development requirments
 install:
 	python -m pip install --upgrade pip
-	# Used for packaging and publishing
 	pip install -r requirements.txt
 	pip install pdf2docx --no-deps
