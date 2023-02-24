@@ -68,7 +68,8 @@ async def convert_txt(callback_query: types.CallbackQuery):
     f = open(f"storage/{chat_id}/test.txt", "r")
     f = f.readlines()
     heading = f[0]
-    f.pop(0)
+    if len(f) > 1:
+        f.pop(0)
     text = '\n'.join([elem for elem in f])
     if convert_to == 'text':
         await callback_query.message.answer(text)
