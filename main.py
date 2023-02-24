@@ -1,6 +1,7 @@
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton, InputFile
 from aiogram.utils.markdown import hlink
+from PyPDF2 import PdfReader, PdfWriter
 from PIL import Image
 from docx import Document
 import pandas as pd
@@ -113,6 +114,26 @@ async def convert_pdf(callback_query: types.CallbackQuery):
     clear_storage(chat_id)
 
 
+@dp.callback_query_handler(text=['split'])
+async def split_pdf(callback_query: types.CallbackQuery):
+    chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
+    path = f"storage/{chat_id}/test.pdf"
+    reader = PdfReader(path)
+    os.remove(path)
+    for page in range(len(reader.pages)):
+        writer = PdfWriter()
+        current_page = reader.pages[page]
+        writer.add_page(current_page)
+        output = f"storage/{chat_id}/merged-pdf-{page + 1}.pdf"
+        with open(output, "wb") as file:
+            writer.write(file)
+    for filename in os.listdir(f'storage/{chat_id}'):
+        path = f'storage/{chat_id}/{filename}'
+        await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    clear_storage(chat_id)
+
+
 @dp.callback_query_handler(text=['csv xlsx'])
 async def convert_csv(callback_query: types.CallbackQuery):
     chat_id = callback_query.message['chat']['id']
@@ -204,7 +225,7 @@ async def convert_photo(callback_query: types.CallbackQuery):
 
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-    chat_id = message.chat.id
+    chat_id = message['chat']['id']
     os.mkdir(f'storage/{chat_id}')
     await message.answer("Привет! Конвертер файлов к "
                          "вашим услугам!\n\nЯ могу изменить "
@@ -292,7 +313,8 @@ async def file_processing(message: types.Message):
         kb.add(btn_1, btn_2, btn_3)
     elif extension == "pdf":
         btn_1 = InlineKeyboardButton('DOCX', callback_data='pdf docx')
-        kb.add(btn_1)
+        btn_2 = InlineKeyboardButton('SPLIT', callback_data='split')
+        kb.add(btn_1, btn_2)
     elif extension == "txt":
         btn_1 = InlineKeyboardButton('text message', callback_data='txt text')
         btn_2 = InlineKeyboardButton('DOCX', callback_data='txt docx')

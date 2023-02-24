@@ -39,3 +39,4 @@ urllib3==1.26.14
 yarl==1.8.2
 gunicorn==19.7.1
 opencv-python-headless==4.6.0.66
+pypdf2~=3.0.1
