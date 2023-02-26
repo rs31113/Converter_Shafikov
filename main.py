@@ -12,6 +12,7 @@ from typing import Tuple
 from docx2pdf import convert
 from heic2png import HEIC2PNG
 from pdf2docx import parse
+from config import TOKEN
 
 
 bot = Bot(token=TOKEN)
