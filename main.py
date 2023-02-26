@@ -8,7 +8,6 @@ import pandas as pd
 import os
 from pytube import YouTube
 import moviepy.editor as moviepy
-from config import TOKEN
 from typing import Tuple
 from docx2pdf import convert
 from heic2png import HEIC2PNG
@@ -82,25 +81,21 @@ async def convert_txt(callback_query: types.CallbackQuery):
     clear_storage(chat_id)
 
 
-@dp.callback_query_handler(text=['docx pdf', 'docx txt', 'docx text'])
+@dp.callback_query_handler(text=['docx txt', 'docx text'])
 async def convert_docx(callback_query: types.CallbackQuery):
     chat_id = callback_query.message['chat']['id']
     await request_processing(callback_query.message, chat_id)
     convert_to = callback_query.data.split()[1]
     path = f'storage/{chat_id}/test.{convert_to}'
-    if convert_to == 'text' or convert_to == 'txt':
-        doc = Document(f"storage/{chat_id}/test.docx")
-        result = [p.text for p in doc.paragraphs]
-        result = '\n'.join(result)
-        if convert_to == 'text':
-            await callback_query.message.answer(result)
-        else:
-            with open(path, "w") as f:
-                f.write(result)
-            f.close()
-            await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    doc = Document(f"storage/{chat_id}/test.docx")
+    result = [p.text for p in doc.paragraphs]
+    result = '\n'.join(result)
+    if convert_to == 'text':
+        await callback_query.message.answer(result)
     else:
-        convert(f'storage/{chat_id}/test.docx', f'storage/{chat_id}/test.pdf')
+        with open(path, "w") as f:
+            f.write(result)
+        f.close()
         await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     clear_storage(chat_id)
 
@@ -308,10 +303,9 @@ async def file_processing(message: types.Message):
     elif extension == "heic":
         kb.add(png_btn, jpg_btn, jpeg_btn, pdf_btn, bmp_btn)
     elif extension == "docx":
-        btn_1 = InlineKeyboardButton('PDF', callback_data='docx pdf')
-        btn_2 = InlineKeyboardButton('TXT', callback_data='docx txt')
-        btn_3 = InlineKeyboardButton('text message', callback_data='docx text')
-        kb.add(btn_1, btn_2, btn_3)
+        btn_1 = InlineKeyboardButton('TXT', callback_data='docx txt')
+        btn_2 = InlineKeyboardButton('text message', callback_data='docx text')
+        kb.add(btn_1, btn_2)
     elif extension == "pdf":
         btn_1 = InlineKeyboardButton('DOCX', callback_data='pdf docx')
         btn_2 = InlineKeyboardButton('SPLIT', callback_data='split')
