@@ -234,6 +234,7 @@ async def convert_photo(callback_query: types.CallbackQuery):
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     chat_id = message['chat']['id']
+    clear_storage(chat_id)
     os.mkdir(f'storage/{chat_id}')
     await message.answer("Привет! Конвертер файлов к "
                          "вашим услугам!\n\nЯ могу изменить "
