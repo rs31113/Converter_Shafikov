@@ -231,24 +231,44 @@ async def convert_photo(callback_query: types.CallbackQuery):
     clear_storage(chat_id)
 
 
+@dp.callback_query_handler(text=['voice mp3'])
+async def convert_voice(callback_query: types.CallbackQuery):
+    chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
+    path = f'storage/{chat_id}/test.mp3'
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    clear_storage(chat_id)
+
+
+@dp.message_handler(commands=['help'])
+async def help_message(message: types.Message):
+    file = open('help_message.txt')
+    text = file.read()
+    await message.answer(text)
+
+
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     chat_id = message['chat']['id']
-    clear_storage(chat_id)
-    os.mkdir(f'storage/{chat_id}')
-    await message.answer("Привет! Конвертер файлов к "
-                         "вашим услугам!\n\nЯ могу изменить "
-                         "формат вашего файла.\nПросто отправь мне любой файл, а я "
-                         "предложу варианты для конвертации.")
+    file = open('start_message.txt')
+    text = file.read()
+    try:
+        os.mkdir(f'storage/{chat_id}')
+    except FileExistsError:
+        pass
+    await message.answer(text)
 
 
 @dp.message_handler(content_types=['voice'])
 async def voice_processing(message: types.Message):
     chat_id = message['chat']['id']
     path = f'storage/{chat_id}/test.mp3'
+    extension = 'VOICE'
+    kb = InlineKeyboardMarkup(row_width=2)
+    btn_1 = InlineKeyboardButton('MP3', callback_data='voice mp3')
+    kb.add(btn_1)
     await message.voice.download(destination_file=path)
-    await message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
-    clear_storage(chat_id)
+    await reply_to_user(extension, kb, message)
 
 
 @dp.message_handler(content_types=['photo'])
@@ -273,6 +293,7 @@ async def sticker_processing(message: types.Message):
 
 @dp.message_handler(content_types=['text'])
 async def text_processing(message: types.Message):
+    print(message.text)
     chat_id = message['chat']['id']
     kb = InlineKeyboardMarkup(row_width=2)
     btn_1 = InlineKeyboardButton('TXT', callback_data='text txt')
@@ -296,7 +317,7 @@ async def video_processing(message: types.Message):
     kb = InlineKeyboardMarkup(row_width=2)
     btn_1 = InlineKeyboardButton('MP3', callback_data='video mp3')
     kb.add(btn_1)
-    extension = "mp4"
+    extension = "VIDEO"
     await message.video.download(destination_file=f'storage/{chat_id}/test.mp4')
     await reply_to_user(extension, kb, message)
 
@@ -312,6 +333,9 @@ async def file_processing(message: types.Message):
         kb.add(btn_1)
     elif extension == "csv":
         btn_1 = InlineKeyboardButton('XLSX', callback_data='csv xlsx')
+        kb.add(btn_1)
+    elif extension == 'mp4':
+        btn_1 = InlineKeyboardButton('MP3', callback_data='video mp3')
         kb.add(btn_1)
     elif extension == "heic":
         kb.add(png_btn, jpg_btn, jpeg_btn, pdf_btn, bmp_btn)
