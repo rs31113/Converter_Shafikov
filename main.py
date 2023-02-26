@@ -5,6 +5,7 @@ from PyPDF2 import PdfReader, PdfWriter
 from PIL import Image
 from docx import Document
 import pandas as pd
+import subprocess
 import os
 from pytube import YouTube
 import moviepy.editor as moviepy
@@ -79,6 +80,17 @@ async def convert_txt(callback_query: types.CallbackQuery):
         document.add_paragraph(text)
         document.save(path)
         await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    clear_storage(chat_id)
+
+
+@dp.callback_query_handler(text='doc docx')
+async def convert_doc(callback_query: types.CallbackQuery):
+    chat_id = callback_query.message['chat']['id']
+    await request_processing(callback_query.message, chat_id)
+    convert_to = callback_query.data.split()[1]
+    path = f'storage/{chat_id}/test.{convert_to}'
+    subprocess.call(['soffice', '--headless', '--convert-to', convert_to, f'storage/{chat_id}/test.doc'])
+    await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     clear_storage(chat_id)
 
 
@@ -307,6 +319,9 @@ async def file_processing(message: types.Message):
         kb.add(btn_1)
     elif extension == "heic":
         kb.add(png_btn, jpg_btn, jpeg_btn, pdf_btn, bmp_btn)
+    elif extension == "doc":
+        btn_1 = InlineKeyboardButton('DOCX', callback_data='doc docx')
+        kb.add(btn_1)
     elif extension == "docx":
         btn_1 = InlineKeyboardButton('PDF', callback_data='docx pdf')
         btn_2 = InlineKeyboardButton('TXT', callback_data='docx txt')
