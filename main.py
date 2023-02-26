@@ -40,10 +40,10 @@ def convert_pdf2docx(input_file: str, output_file: str, pages: Tuple = None):
     return result
 
 
-def download_from_youtube(youtube_link):
+def download_from_youtube(youtube_link, chat_id):
     video = YouTube(youtube_link)
     video = video.streams.get_highest_resolution()
-    video.download('storage', f'{chat_id}', 'test.mp4')
+    video.download(f'storage/{chat_id}', 'test.mp4')
 
 
 async def request_processing(message, chat_id):
@@ -180,21 +180,32 @@ async def convert_to_mp4(callback_query: types.CallbackQuery):
     clear_storage(chat_id)
 
 
-@dp.callback_query_handler(text=['text txt', 'text docx'])
+@dp.callback_query_handler(text=['text txt', 'text docx', 'youtube'])
 async def convert_text(callback_query: types.CallbackQuery):
+    convert_from = callback_query.data.split()[0]
     chat_id = callback_query.message['chat']['id']
     await request_processing(callback_query.message, chat_id)
-    convert_to = callback_query.data.split()[1]
-    path = f'storage/{chat_id}/test.{convert_to}'
-    if convert_to == "txt":
-        await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+    if convert_from == 'youtube':
+        file = open(f'storage/{chat_id}/test.txt', 'r')
+        link = file.readline()
+        path = f'storage/{chat_id}/test.mp4'
+        try:
+            download_from_youtube(youtube_link=link, chat_id=chat_id)
+            await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+        except:
+            await callback_query.message.answer('Не удалось скачать видео, попробуйте ещё раз.')
     else:
-        document = Document()
-        with open(f'storage/{chat_id}/test.txt') as f:
-            for line in f:
-                document.add_paragraph(line)
-        document.save(path)
-        await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+        convert_to = callback_query.data.split()[1]
+        path = f'storage/{chat_id}/test.{convert_to}'
+        if convert_to == "txt":
+            await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
+        else:
+            document = Document()
+            with open(f'storage/{chat_id}/test.txt') as f:
+                for line in f:
+                    document.add_paragraph(line)
+            document.save(path)
+            await callback_query.message.answer_document(InputFile(path), caption=bot_link, parse_mode=mode)
     clear_storage(chat_id)
 
 
@@ -262,20 +273,20 @@ async def sticker_processing(message: types.Message):
 @dp.message_handler(content_types=['text'])
 async def text_processing(message: types.Message):
     chat_id = message['chat']['id']
+    kb = InlineKeyboardMarkup(row_width=2)
+    btn_1 = InlineKeyboardButton('TXT', callback_data='text txt')
+    btn_2 = InlineKeyboardButton('DOCX', callback_data='text docx')
+    btn_3 = InlineKeyboardButton('DOWNLOAD FROM YOUTUBE', callback_data='youtube')
+    kb.add(btn_1, btn_2, btn_3)
+    extension = "text"
     try:
-        download_from_youtube(message.text)
-        await message.answer_document(InputFile(f'storage/{chat_id}/test.mp4'), caption=bot_link, parse_mode=mode)
-        clear_storage(chat_id)
-    except:
-        kb = InlineKeyboardMarkup(row_width=2)
-        btn_1 = InlineKeyboardButton('TXT', callback_data='text txt')
-        btn_2 = InlineKeyboardButton('DOCX', callback_data='text docx')
-        kb.add(btn_1, btn_2)
-        extension = "text"
-        file = open(f'storage/{chat_id}/test.txt', 'w+')
-        file.write(message.text)
-        file.close()
-        await reply_to_user(extension, kb, message)
+        os.mkdir(f'storage/{chat_id}')
+    except FileExistsError:
+        pass
+    file = open(f'storage/{chat_id}/test.txt', 'w+')
+    file.write(message.text)
+    file.close()
+    await reply_to_user(extension, kb, message)
 
 
 @dp.message_handler(content_types=['video'])
