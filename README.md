@@ -11,7 +11,7 @@ The File Format Converter Bot provides a convenient way to manage and convert fi
 - **Inline Keyboard Interaction**: Users can interact with the bot through inline keyboards for a seamless user experience.
 - **File Format Conversion**: Easily change the format of files directly within Telegram.
 
-## Technology St
+## Technology Stack
 
 - **Backend**: Python
 - **Framework**: aiogram library (Python)
