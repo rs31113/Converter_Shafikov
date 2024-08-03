@@ -32,6 +32,6 @@ This bot was developed for the all-Russian competition "Engineers of the Future"
 
 This repository is private and intended for demonstration purposes. If you have access and wish to suggest improvements, please contact us directly.
 
-## Contact
+## Contacts
 
 For any inquiries or support, please contact me at [rs31113@yandex.ru](mailto:rs31113@yandex.ru) or via Telegram [@rs31113](https://t.me/rs31113).
