@@ -34,4 +34,4 @@ This repository is private and intended for demonstration purposes. If you have 
 
 ## Contacts
 
-For any inquiries or support, please contact me at [rs31113@yandex.ru](mailto:rs31113@yandex.ru) or via Telegram [@rs31113](https://t.me/rs31113).
+For any inquiries or support, please contact me at [rs31113@yandex.ru](mailto:rs31113@yandex.ru) or via Telegram [@rrshafikov](https://t.me/rrshafikov).
